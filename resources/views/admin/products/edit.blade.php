@@ -1,0 +1,25 @@
+@extends('layouts.admin')
+@section('title', 'Edit Produk')
+
+@section('content')
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0">Edit Produk: {{ $product->name }}</h4>
+    <a href="{{ route('admin.products.index') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Kembali
+    </a>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <form method="POST" action="{{ route('admin.products.update', $product->id) }}" enctype="multipart/form-data">
+            @csrf @method('PUT')
+            @include('admin.products._form')
+            <div class="mt-3">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save me-1"></i>Perbarui Produk
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+@endsection
