@@ -6,6 +6,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ReviewController;
 use Illuminate\Support\Facades\Route;
 
 // Public routes
@@ -30,6 +31,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/checkout', [OrderController::class, 'checkout'])->name('checkout');
     Route::post('/checkout', [OrderController::class, 'store'])->name('orders.store');
     Route::post('/promo/apply', [OrderController::class, 'applyPromo'])->name('promo.apply');
+
+    // Reviews
+    Route::post('/products/{slug}/reviews', [ReviewController::class, 'store'])->name('reviews.store');
+    Route::delete('/reviews/{review}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
 
     // Payment (Midtrans)
     Route::get('/payment/{order}', [OrderController::class, 'paymentPage'])->name('payment.page');
