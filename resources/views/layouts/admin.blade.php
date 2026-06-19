@@ -57,6 +57,9 @@
                 <a class="nav-link {{ request()->routeIs('admin.users*') ? 'active' : '' }}" href="{{ route('admin.users.index') }}">
                     <i class="bi bi-people me-2"></i> Pelanggan
                 </a>
+                <a class="nav-link {{ request()->routeIs('admin.promos*') ? 'active' : '' }}" href="{{ route('admin.promos.index') }}">
+                    <i class="bi bi-ticket-perforated me-2"></i> Kode Promo
+                </a>
             </nav>
         </div>
 

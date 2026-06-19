@@ -81,9 +81,31 @@
                     </div>
                 @endforeach
                 <hr>
+
+                {{-- Kode Promo --}}
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Kode Promo</label>
+                    <div class="input-group">
+                        <input type="text" id="promo_input" class="form-control text-uppercase"
+                               placeholder="Masukkan kode promo">
+                        <button type="button" class="btn btn-outline-secondary" id="btn-apply-promo">Terapkan</button>
+                    </div>
+                    <div id="promo-msg" class="form-text mt-1"></div>
+                    <input type="hidden" name="promo_code" id="promo_code_hidden">
+                </div>
+
+                <div class="d-flex justify-content-between text-muted mb-1">
+                    <span>Subtotal</span>
+                    <span id="subtotal-label">Rp {{ number_format($total, 0, ',', '.') }}</span>
+                </div>
+                <div class="d-flex justify-content-between text-success mb-1" id="discount-row" style="display:none!important">
+                    <span>Diskon</span>
+                    <span id="discount-label">-</span>
+                </div>
+                <hr>
                 <div class="d-flex justify-content-between fw-bold fs-5">
                     <span>Total</span>
-                    <span class="text-primary">Rp {{ number_format($total, 0, ',', '.') }}</span>
+                    <span class="text-primary" id="total-label">Rp {{ number_format($total, 0, ',', '.') }}</span>
                 </div>
                 <div class="d-grid mt-4">
                     <button type="submit" class="btn btn-primary btn-lg">
@@ -98,4 +120,41 @@
     </div>
 </div>
 </form>
+
+@push('scripts')
+<script>
+document.getElementById('btn-apply-promo').addEventListener('click', function () {
+    const code = document.getElementById('promo_input').value.trim();
+    const msg  = document.getElementById('promo-msg');
+    if (!code) return;
+
+    fetch('{{ route('promo.apply') }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({ code })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('promo_code_hidden').value = data.code;
+            document.getElementById('discount-row').style.display = 'flex';
+            document.getElementById('discount-label').textContent = '- ' + data.discount_label;
+            document.getElementById('total-label').textContent = data.total_label;
+            msg.className = 'form-text text-success mt-1';
+            msg.textContent = data.message;
+        } else {
+            msg.className = 'form-text text-danger mt-1';
+            msg.textContent = data.error;
+        }
+    })
+    .catch(() => {
+        msg.className = 'form-text text-danger mt-1';
+        msg.textContent = 'Kode promo tidak valid.';
+    });
+});
+</script>
+@endpush
 @endsection

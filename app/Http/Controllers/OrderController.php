@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Mail\OrderConfirmation;
 use App\Models\CartItem;
 use App\Models\Order;
+use App\Models\PromoCode;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -57,11 +58,44 @@ class OrderController extends Controller
         return view('orders.checkout', compact('cartItems', 'total'));
     }
 
+    public function applyPromo(Request $request)
+    {
+        $request->validate(['code' => 'required|string']);
+
+        $cartItems = CartItem::with('product')->where('user_id', auth()->id())->get();
+        $subtotal  = $cartItems->sum(fn($item) => $item->quantity * $item->product->price);
+
+        $promo = PromoCode::where('code', strtoupper($request->code))->first();
+
+        if (!$promo || !$promo->isValid()) {
+            return response()->json(['error' => 'Kode promo tidak valid atau sudah kadaluarsa.'], 422);
+        }
+
+        if ($subtotal < $promo->min_purchase) {
+            return response()->json([
+                'error' => 'Minimum pembelian Rp ' . number_format($promo->min_purchase, 0, ',', '.') . ' untuk menggunakan promo ini.',
+            ], 422);
+        }
+
+        $discount = $promo->calculateDiscount($subtotal);
+
+        return response()->json([
+            'success'        => true,
+            'code'           => $promo->code,
+            'discount'       => $discount,
+            'discount_label' => 'Rp ' . number_format($discount, 0, ',', '.'),
+            'total'          => $subtotal - $discount,
+            'total_label'    => 'Rp ' . number_format($subtotal - $discount, 0, ',', '.'),
+            'message'        => 'Promo berhasil diterapkan! Diskon ' . ($promo->type === 'percentage' ? $promo->value . '%' : 'Rp ' . number_format($promo->value, 0, ',', '.')),
+        ]);
+    }
+
     public function store(Request $request)
     {
         $request->validate([
             'shipping_address' => 'required|string|max:255',
             'phone'            => 'required|string|max:20',
+            'promo_code'       => 'nullable|string|exists:promo_codes,code',
         ]);
 
         $cartItems = CartItem::with('product')
@@ -73,14 +107,27 @@ class OrderController extends Controller
         }
 
         $order = DB::transaction(function () use ($request, $cartItems) {
-            $total = $cartItems->sum(fn($item) => $item->quantity * $item->product->price);
+            $subtotal      = $cartItems->sum(fn($item) => $item->quantity * $item->product->price);
+            $discount      = 0;
+            $promoCodeId   = null;
+
+            if ($request->filled('promo_code')) {
+                $promo = PromoCode::where('code', strtoupper($request->promo_code))->first();
+                if ($promo && $promo->isValid()) {
+                    $discount    = $promo->calculateDiscount($subtotal);
+                    $promoCodeId = $promo->id;
+                    $promo->increment('used_count');
+                }
+            }
 
             $order = Order::create([
                 'user_id'          => auth()->id(),
-                'total_price'      => $total,
+                'total_price'      => max(0, $subtotal - $discount),
                 'status'           => 'pending',
                 'shipping_address' => $request->shipping_address,
                 'phone'            => $request->phone,
+                'promo_code_id'    => $promoCodeId,
+                'discount_amount'  => $discount,
             ]);
 
             foreach ($cartItems as $item) {

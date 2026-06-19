@@ -29,6 +29,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
     Route::get('/checkout', [OrderController::class, 'checkout'])->name('checkout');
     Route::post('/checkout', [OrderController::class, 'store'])->name('orders.store');
+    Route::post('/promo/apply', [OrderController::class, 'applyPromo'])->name('promo.apply');
 
     // Payment (Midtrans)
     Route::get('/payment/{order}', [OrderController::class, 'paymentPage'])->name('payment.page');
@@ -49,6 +50,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::get('orders/{order}', [Admin\OrderController::class, 'show'])->name('orders.show');
     Route::patch('orders/{order}', [Admin\OrderController::class, 'update'])->name('orders.update');
     Route::get('users', [Admin\UserController::class, 'index'])->name('users.index');
+    Route::resource('promos', Admin\PromoCodeController::class)->except('show');
 });
 
 require __DIR__.'/auth.php';

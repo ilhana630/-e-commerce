@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\CartItem;
 use App\Models\Category;
+use App\Models\PromoCode;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
@@ -123,6 +124,27 @@ class DatabaseSeeder extends Seeder
                     'stock'       => $p['stock'],
                     'image'       => $filename,
                     'is_active'   => true,
+                ]
+            );
+        }
+
+        // ── Promo Codes ────────────────────────────────────────
+        $promos = [
+            ['code' => 'DISKON10',  'type' => 'percentage', 'value' => 10,     'min_purchase' => 0,       'max_uses' => null],
+            ['code' => 'HEMAT50K',  'type' => 'fixed',      'value' => 50000,  'min_purchase' => 200000,  'max_uses' => 100],
+            ['code' => 'WELCOME20', 'type' => 'percentage', 'value' => 20,     'min_purchase' => 500000,  'max_uses' => 50],
+            ['code' => 'UAS2026',   'type' => 'fixed',      'value' => 100000, 'min_purchase' => 1000000, 'max_uses' => 10],
+        ];
+
+        foreach ($promos as $p) {
+            PromoCode::firstOrCreate(
+                ['code' => $p['code']],
+                [
+                    'type'         => $p['type'],
+                    'value'        => $p['value'],
+                    'min_purchase' => $p['min_purchase'],
+                    'max_uses'     => $p['max_uses'],
+                    'is_active'    => true,
                 ]
             );
         }
